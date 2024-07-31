@@ -1,0 +1,326 @@
+import random as rd
+import time
+from time import sleep
+class card:
+    stack = []
+    colours =  ['green', 'yellow', 'red', 'blue']
+
+    def __init__(self, colour, value):
+        self.colour = colour
+        self.value = value
+        if self.value == 'Wild' and self.colour == 'Wild' or self.value == 'Draw 4' and self.colour == 'Draw 4':
+            self.name = value
+        #elif self.colour in self.colours and self.value == 'Wild' or self.colour in self.colours and self.value == 'Draw 4':
+            #self.name = colour + ' ' + value
+        else:
+          self.name = '{} '.format(colour) + str(value)
+
+    def __str__(self):
+        return self.name
+
+    # Assigns chosen colour to the Wild Card's name
+    def wildcolour(self, colour):
+      self.colour = colour
+      self.name = '{} '.format(colour) + str(self.value)
+
+
+class Deck:
+    def __init__(self, player):
+        self.deck = []
+        self.name_deck = []
+        self.player = player
+        for i in range(7):
+            choice = stack.pop()
+            self.deck.append(choice)
+            self.name_deck.append(choice.name)
+
+    def show_deck(self):
+        print('Your Deck: ' + str(self.name_deck))
+
+    # Check if deck is empty in order to end game
+    def win_check(self):
+        if len(self.deck) == 0:
+          print('{} Wins!'.format(self.player))
+          raise Exception("Game Over")
+
+
+
+
+class game:
+    colours =  ['green', 'yellow', 'red', 'blue']
+    def __init__(self, player_turn = True, comp_turn = False):
+        self.mode = 2
+        self.stack = self.stack_creator()
+        self.top = self.stack.pop()
+        self.player_turn = player_turn
+        self.comp_turn = comp_turn
+
+    # Create the deck of Uno cards consisting of 2 colour cards of each number 0-9 and 2 Wild and Draw 4 cards.
+    def stack_creator(self):
+        colours = ['green', 'yellow', 'red', 'blue']
+        stack = []
+
+        for colour in colours:
+            for i in range(2):
+                for i in range(10):
+                    stack.append(card(colour, i))
+            for i in range(2):
+                stack.append(card(colour, '+2'))
+            for i in range(2):
+                stack.append(card(colour, 'skip'))
+            for i in range(2):
+                stack.append(card(colour, 'reverse'))
+        for i in range(self.mode):
+            stack.append(card('Wild', 'Wild'))
+        for i in range(self.mode):
+            stack.append(card('Draw 4', 'Draw 4'))
+        rd.shuffle(stack)
+        return stack
+
+
+
+    # Card checker function that compares chosen card to card on top of stack
+    def card_checker(self, move, top):
+
+        # If chosen card is Wild or Draw 4, choose a colour.
+        if move.value == 'Wild' or move.value == 'Draw 4':
+          if self.player_turn:
+            col = input('Choose a colour: ')
+            if col in card.colours:
+              move.wildcolour(col)
+              if move.value == 'Draw 4':
+                return '+4'
+            else:
+              print('Invalid colour')
+              return False
+          elif self.comp_turn:
+            if move.value == 'Draw 4':
+              return '+4'
+            else:
+              return 'Wild'
+
+        # Checks if either colour or value is similar
+        if top.colour == move.colour or top.value == move.value:
+            if move.value == 'skip' or move.value == 'reverse':
+              return 'again'
+
+            elif move.value == '+2':
+                return '+2'
+            return True
+        else:
+          return False
+
+    # Start screen
+    def help(self):
+      print('Type play to start game')
+      print('Type help for rules')
+      print('Type settings to open settings')
+      print("In order to play a card, type the name exactly as it is in your deck. Type 'draw' to draw from stack.")
+      strt = input()
+      if strt == 'play':
+        self.play()
+      elif strt == 'settings':
+        self.setting()
+      else:
+        print('Invalid input')
+        self.help()
+
+    # Settings screen allowing change of modes which alter the Wild and +4 card count
+    def setting(self):
+      print('Choose a mode:')
+      print('1. Standard: 2 wild cards and 2 +4 cards')
+      print('2. Fun: 6 wild cards and 6 +4 cards')
+      print('3. Chaos: 10 wild cards and 10 +4 cards ')
+      mode = input('Type 1, 2 or 3 ')
+      if mode == '1':
+        self.mode = 2
+        print('Standard mode selected')
+      elif mode == '2':
+        self.mode = 6
+        print('Fun mode selected')
+      elif mode == '3':
+        self.mode = 10
+        print('Chaos mode selected')
+      else:
+        print('Invalid input')
+        self.setting()
+      
+      self.stack = self.stack_creator()
+      self.top = self.stack.pop()
+      player_deck = Deck('Player')
+      computer_deck = Deck('Computer')
+      self.help()
+
+    def move_input(self, move):
+      # User types 'draw' to take a card from stack and end turn
+      if move.upper() == 'DRAW':
+        draw = self.stack.pop()
+        player_deck.deck.append(draw)
+        player_deck.name_deck.append(draw.name)
+        print('{} added to your deck'.format(draw))
+        self.player_turn = False
+        self.comp_turn = True
+        self.play()
+
+    
+
+    def play(self):
+        player_deck.win_check()
+        computer_deck.win_check()
+
+        while self.player_turn:
+            player_deck.win_check()
+            computer_deck.win_check()
+            sleep(1)
+            print('Computer has ' + str(len(computer_deck.deck)) + ' cards left!')
+            sleep(1)
+            print('Top card is ' + self.top.name)
+            sleep(1)
+            player_deck.show_deck()
+            sleep(1)
+            move = input('Play a card or draw from stack: ')
+            sleep(1)
+            self.move_input(move)
+
+            # Checks if card is in player's deck
+            if move in player_deck.name_deck:
+              ind = player_deck.name_deck.index(move)
+              move = player_deck.deck[ind]
+              check = self.card_checker(move, self.top)
+
+              # If valid card chosen, add to top of stack and remove from player's deck
+              if check == True:
+                  self.stack.append(self.top)
+                  rd.shuffle(self.stack)
+                  player_deck.deck.pop(ind)
+                  player_deck.name_deck.pop(ind)
+                  self.top = move
+                  self.player_turn = False
+                  self.comp_turn = True
+                  self.play()
+
+              # If card is reverse or skip, remove from player's deck and gives another turn.
+              elif check == 'again':
+                  self.stack.append(self.top)
+                  rd.shuffle(self.stack)
+                  player_deck.deck.pop(ind)
+                  player_deck.name_deck.pop(ind)
+                  self.top = move
+                  print("Your Turn again!")
+                  self.play()
+
+              # If card is +2, add two cards to computer's deck and gives another turn
+              elif check == '+2':
+                  self.stack.append(self.top)
+                  rd.shuffle(self.stack)
+                  player_deck.deck.pop(ind)
+                  player_deck.name_deck.pop(ind)
+                  self.top = move
+                  for i in range(2):
+                    computer_deck.deck.append(self.stack.pop())
+                  print("+2 cards for the opponent")
+                  print("Your Turn again!")
+                  self.play()
+
+              # If card is +4, add 4 cards to computer's deck and gives another turn
+              elif check == '+4':
+                  self.stack.append(self.top)
+                  rd.shuffle(self.stack)
+                  player_deck.deck.pop(ind)
+                  player_deck.name_deck.pop(ind)
+                  self.top = move
+                  for i in range(4):
+                    computer_deck.deck.append(self.stack.pop())
+                  print("+4 cards for the opponent")
+                  print("Your Turn again!")
+                  self.play()
+              # If card is in deck but not a valid play
+              else:
+                  print('Invalid move')
+            # If card is not in deck or incorrect syntax inputted
+            else:
+                print('Card not in deck')
+
+        while self.comp_turn:
+          player_deck.win_check()
+          computer_deck.win_check()
+          sleep(1)
+          print('Top card is ' + self.top.name)
+          sleep(1)
+
+          # Create a list of every valid card that can be played from the computer's deck
+          poss_cards = []
+          for card in computer_deck.deck:
+            if self.card_checker(card, self.top) != False:
+              poss_cards.append(card)
+
+          # If no cards are valid, draw from stack
+          if len(poss_cards) == 0:
+            draw = self.stack.pop()
+            computer_deck.deck.append(draw)
+            print('Computer drew from stack')
+            sleep(1)
+            self.player_turn = True
+            self.comp_turn = False
+            self.play()
+
+          # If there are valid cards, choose one at random
+          compmove = rd.choice(poss_cards)
+          sleep(1)
+          print('Computer plays: ' + compmove.name)
+          ind = computer_deck.deck.index(compmove)
+          self.stack.append(self.top)
+          rd.shuffle(self.stack)
+          computer_deck.deck.pop(ind)
+
+          # If card is reverse or skip, remove from computer's deck and gives another turn.
+          if self.card_checker(compmove, self.top) == 'again':
+            self.top = compmove
+            print("Computer's Turn again!")
+            self.play()
+
+          # If card is +2, add two cards to player's deck and gives another turn
+          elif self.card_checker(compmove, self.top) == '+2':
+            self.top = compmove
+            for i in range(2):
+              player_deck.deck.append(self.stack.pop())
+            print("+2 cards for you")
+            print("Computer's Turn again!")
+            self.play()
+
+          # If card is +4, chooses a random colour then add 4 cards to player's deck and gives another turn
+          elif self.card_checker(compmove, self.top) == '+4':
+            col = rd.choice(card.colours)
+            print('Computer chose ' + col)
+            compmove.wildcolour(col)
+            for i in range(4):
+              new_card = self.stack.pop()
+              player_deck.deck.append(new_card)
+              player_deck.name_deck.append(new_card.name)
+            self.top = compmove
+            print("+4 cards for you")
+            print("Computer's Turn again!")
+            self.play()
+
+          # If card is wild, choose a random colour
+          elif self.card_checker(compmove, self.top) == 'Wild':
+            col = rd.choice(card.colours)
+            print('Computer chose ' + col)
+            compmove.wildcolour(col)
+
+          self.top = compmove
+          self.comp_turn = False
+          self.player_turn = True
+          self.play()
+
+
+
+player_deck = Deck('Player')
+computer_deck = Deck('Computer')
+
+start_game = game()
+try:
+  start_game.help()
+
+except Exception as e:
+  print(e)
